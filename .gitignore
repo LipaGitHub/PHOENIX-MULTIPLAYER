@@ -1,0 +1,7 @@
+*.opendb
+Servidor/.vs/Servidor/v15/ipch/AutoPCH/223a9635663d17fd/SERVIDORSOURCE.ipch
+*.ipch
+Servidor/Servidor/Debug/Servidor.tlog/CL.read.1.tlog
+*.tlog
+Servidor/Servidor/Debug/vc141.idb
+*.obj
