@@ -5,3 +5,7 @@ Servidor/Servidor/Debug/Servidor.tlog/CL.read.1.tlog
 *.tlog
 Servidor/Servidor/Debug/vc141.idb
 *.obj
+*.db
+Servidor/.vs/Servidor/v15/.suo
+/DLL/.vs/DLL/v15
+/DLL/DLL/Debug
