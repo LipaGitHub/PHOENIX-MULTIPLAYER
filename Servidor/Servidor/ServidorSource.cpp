@@ -17,12 +17,9 @@ void imprimeMapa();
 void dadosIniciais();
 void criaNavesInimigas(int nCriar);
 
-
-
-
 Celula *Tiros;
 
-NaveInvasora *threadInimigas;
+
 DWORD *threadId;
 
 
@@ -73,16 +70,19 @@ void dadosIniciais() {
 	_tprintf(TEXT("Quantas vidas iniciais?\n"));
 	_tscanf_s(TEXT("%d"), &(mPartilhada->dConfiguraveis.nVidasIni));
 }
+
+
 /* ----------------------------------------------------- */
 /* "Thread" - Funcao associada à Thread de Naves Inimigas */
 /* ----------------------------------------------------- */
 
 DWORD WINAPI gerarInimigas() {
-	HANDLE *tIni;
 
+
+	HANDLE *tIni;
 	tIni = (HANDLE*)malloc(mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE));
-    //... alocar memoria ( mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE) )
-	
+	//... alocar memoria ( mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE) )
+
 	//Necessidade de ao criar a Threada para a nave também a colocar no mapa para depois poder imprimir
 
 	for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
@@ -96,19 +96,21 @@ DWORD WINAPI gerarInimigas() {
 
 
 
-//Atribuir CELULA a cada nave Inimiga
-//HANDLE A NULO
+/*
 
 void criaNavesInimigas(int nCriar) {
-	
+
+	NaveInvasora *threadInimigas;
+
 	threadInimigas = (NaveInvasora *)malloc(nCriar * sizeof(NaveInvasora));
 	threadId = (DWORD *)malloc(nCriar * sizeof(DWORD));
 	for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
-		//threadInimigas[i]->tInvasora = (HANDLE *) malloc(sizeof(HANDLE)); 
+		//threadInimigas[i]->tInvasora = (HANDLE *) malloc(sizeof(HANDLE));
 		_tprintf(TEXT("Criei Nave\n"));
 	}
 	system("pause");
 }
+*/
 
 void navesInimigas() {
 
