@@ -35,7 +35,6 @@ typedef struct {
 typedef struct {
 	Celula Posicao;
 	int tipo;// 0-basica, 1-Esquiva
-			 //Colocar um HANDLE da Thread que gere esta nava inimiga
 }NaveInvasora;
 
 typedef struct {

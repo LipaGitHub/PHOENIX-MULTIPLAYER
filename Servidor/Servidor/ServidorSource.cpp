@@ -10,7 +10,7 @@
 
 
 
-DWORD WINAPI gerarInimigas(int nThreads);
+DWORD WINAPI gerarInimigas();
 void navesInimigas();
 void criarMapa();
 void imprimeMapa();
@@ -21,7 +21,9 @@ void criaNavesInimigas(int nCriar);
 
 
 Celula *Tiros;
-DadosJogo *mPartilhada;
+
+NaveInvasora *threadInimigas;
+DWORD *threadId;
 
 
 
@@ -44,11 +46,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	_tprintf(TEXT("----BEM-VINDO PHOENIX MULTIPLAYER----\n"));
 
-	//dadosIniciais();
+	dadosIniciais();
 
 	criarMapa();
+	criaNavesInimigas(mPartilhada->dConfiguraveis.nInimigas);
 	imprimeMapa();
-	//gerarInimigas(nInimigas);
+	gerarInimigas();
 
 
 	system("pause");
@@ -73,34 +76,47 @@ void dadosIniciais() {
 /* ----------------------------------------------------- */
 /* "Thread" - Funcao associada à Thread de Naves Inimigas */
 /* ----------------------------------------------------- */
-DWORD WINAPI gerarInimigas(int nThreads) {
 
-	HANDLE *threadInimigas;
-	DWORD *threadId;
-	threadInimigas = (HANDLE *)malloc(nThreads * sizeof(HANDLE));
-	threadId = (DWORD *)malloc(nThreads * sizeof(DWORD));
+DWORD WINAPI gerarInimigas() {
+	HANDLE *tIni;
 
+	tIni = (HANDLE*)malloc(mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE));
+    //... alocar memoria ( mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE) )
+	
 	//Necessidade de ao criar a Threada para a nave também a colocar no mapa para depois poder imprimir
 
-
-	for (int i = 0; i < nThreads; i++) {
-		threadInimigas[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)navesInimigas, NULL, 0, &threadId[i]);
+	for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
+		tIni[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)navesInimigas, NULL, 0, &threadId[i]);
 	}
 
-	WaitForMultipleObjects(nThreads, threadInimigas, TRUE, INFINITE);
+	WaitForMultipleObjects(mPartilhada->dConfiguraveis.nInimigas, tIni, TRUE, INFINITE);
 	_tprintf(TEXT("[Thread Principal %d]Vou terminar..."), GetCurrentThreadId());
 	return 0;
 }
 
+
+
+//Atribuir CELULA a cada nave Inimiga
+//HANDLE A NULO
+
 void criaNavesInimigas(int nCriar) {
-
-
+	
+	threadInimigas = (NaveInvasora *)malloc(nCriar * sizeof(NaveInvasora));
+	threadId = (DWORD *)malloc(nCriar * sizeof(DWORD));
+	for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
+		//threadInimigas[i]->tInvasora = (HANDLE *) malloc(sizeof(HANDLE)); 
+		_tprintf(TEXT("Criei Nave\n"));
+	}
+	system("pause");
 }
 
 void navesInimigas() {
 
 	_tprintf(TEXT("[Thread Nave inimiga %d]\n"), GetCurrentThreadId());
 
+	while (1) {
+
+	}
 
 	_tprintf(TEXT("[Thread Nave inimiga %d Vou desligar]\n"), GetCurrentThreadId());
 }

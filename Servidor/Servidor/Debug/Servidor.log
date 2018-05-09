@@ -1,6 +1,3 @@
 ﻿  ServidorSource.cpp
-c:\users\lipap\desktop\phoenix-multiplayer\servidor\servidor\servidorsource.cpp(24): warning C4273: 'mPartilhada': inconsistent dll linkage
-  c:\users\lipap\desktop\phoenix-multiplayer\dll\dll\estruturas.h(58): note: see previous definition of 'mPartilhada'
-c:\users\lipap\desktop\phoenix-multiplayer\servidor\servidor\servidorsource.cpp(35): warning C4101: 'dJogo': unreferenced local variable
-     Creating library C:\Users\lipap\Desktop\PHOENIX-MULTIPLAYER\Servidor\Debug\Servidor.lib and object C:\Users\lipap\Desktop\PHOENIX-MULTIPLAYER\Servidor\Debug\Servidor.exp
+c:\users\lipap\desktop\phoenix-multiplayer\servidor\servidor\servidorsource.cpp(37): warning C4101: 'dJogo': unreferenced local variable
   Servidor.vcxproj -> C:\Users\lipap\Desktop\PHOENIX-MULTIPLAYER\Servidor\Debug\Servidor.exe
