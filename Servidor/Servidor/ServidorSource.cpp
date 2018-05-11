@@ -11,7 +11,7 @@
 
 
 DWORD WINAPI gerarInimigas();
-void navesInimigas();
+void navesInimigas(NaveInvasora *naveInvasora);
 void criarMapa();
 void imprimeMapa();
 void dadosIniciais();
@@ -36,38 +36,41 @@ int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hMap;
 	LARGE_INTEGER t;
 
+	//DWORD *mapa;
+
 	t.QuadPart = sizeof(DadosJogo);
 	hMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, t.HighPart, t.LowPart, TEXT("shm"));
 
 	mPartilhada = (DadosJogo*)MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, (SIZE_T)t.QuadPart);
 
+	_tprintf(TEXT("-------------------------------------\n"));
 	_tprintf(TEXT("----BEM-VINDO PHOENIX MULTIPLAYER----\n"));
+	_tprintf(TEXT("-------------------------------------\n"));
 
 	dadosIniciais();
 
 	criarMapa();
 	criaNavesInimigas(mPartilhada->dConfiguraveis.nInimigas);
-	imprimeMapa();
+	
+	HANDLE imprimeMap = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)imprimeMapa, NULL, 0, NULL);
 	gerarInimigas();
-
-
+	
 	system("pause");
 }
 
 
 void dadosIniciais() {
+	_tprintf(TEXT("\n\nDados Configuráveis:\n"));
 	_tprintf(TEXT("\n-------------------------------------\n"));
-	_tprintf(TEXT("Dados Configuráveis:\n"));
-	_tprintf(TEXT("\n-------------------------------------\n"));
-	_tprintf(TEXT("Quantas Naves Inimigas?\n"));
+	_tprintf(TEXT("Quantas Naves Inimigas? "));
 	_tscanf_s(TEXT("%d"), &(mPartilhada->dConfiguraveis.nInimigas));
-	_tprintf(TEXT("Quantos Powerups?\n"));
+	_tprintf(TEXT("Quantos Powerups? "));
 	_tscanf_s(TEXT("%d"), &(mPartilhada->dConfiguraveis.nPowerups));
-	_tprintf(TEXT("Tempo de Duração?\n"));
+	_tprintf(TEXT("Tempo de Duração? "));
 	_tscanf_s(TEXT("%d"), &(mPartilhada->dConfiguraveis.nDuracao));
-	_tprintf(TEXT("Probabilidade de Ocorrência de Powerups?\n"));
+	_tprintf(TEXT("Probabilidade de Ocorrência de Powerups? "));
 	_tscanf_s(TEXT("%d"), &(mPartilhada->dConfiguraveis.nProb));
-	_tprintf(TEXT("Quantas vidas iniciais?\n"));
+	_tprintf(TEXT("Quantas vidas iniciais? "));
 	_tscanf_s(TEXT("%d"), &(mPartilhada->dConfiguraveis.nVidasIni));
 }
 
@@ -77,16 +80,20 @@ void dadosIniciais() {
 /* ----------------------------------------------------- */
 
 DWORD WINAPI gerarInimigas() {
-
-
 	HANDLE *tIni;
-	tIni = (HANDLE*)malloc(mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE));
-	//... alocar memoria ( mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE) )
+	HANDLE hMutex;
 
-	//Necessidade de ao criar a Threada para a nave também a colocar no mapa para depois poder imprimir
+	tIni = (HANDLE*)malloc(mPartilhada->dConfiguraveis.nInimigas * sizeof(HANDLE));		//alocação de memória para o n° de naves invasoras
+	threadId = (DWORD *)malloc(mPartilhada->dConfiguraveis.nInimigas * sizeof(DWORD));	//alocação de memória para os ID's de cada thread de nave invasora
+	hMutex = CreateMutex(NULL, FALSE, NULL);
+	if (hMutex == NULL) {
+		_tprintf(TEXT("Deu erro no mutex..."));
+	}
 
 	for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
-		tIni[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)navesInimigas, NULL, 0, &threadId[i]);
+		WaitForSingleObject(hMutex, INFINITE);
+		tIni[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)navesInimigas, &(mPartilhada->nInimigas[i]), 0, &threadId[i]);
+		ReleaseMutex(hMutex);
 	}
 
 	WaitForMultipleObjects(mPartilhada->dConfiguraveis.nInimigas, tIni, TRUE, INFINITE);
@@ -94,30 +101,42 @@ DWORD WINAPI gerarInimigas() {
 	return 0;
 }
 
-
-
-/*
-
 void criaNavesInimigas(int nCriar) {
-
-	NaveInvasora *threadInimigas;
-
-	threadInimigas = (NaveInvasora *)malloc(nCriar * sizeof(NaveInvasora));
-	threadId = (DWORD *)malloc(nCriar * sizeof(DWORD));
-	for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
-		//threadInimigas[i]->tInvasora = (HANDLE *) malloc(sizeof(HANDLE));
-		_tprintf(TEXT("Criei Nave\n"));
+	for (int i = 0; i < nCriar; i++) {
+		mPartilhada->nInimigas[i].Posicao.caracter = 'I';
+		mPartilhada->nInimigas[i].Posicao.x = 8 + i;
+		mPartilhada->nInimigas[i].Posicao.y = 1;
 	}
+	_tprintf(TEXT("\n--- Naves invasoras criadas ---\n"));
 	system("pause");
 }
-*/
 
-void navesInimigas() {
 
-	_tprintf(TEXT("[Thread Nave inimiga %d]\n"), GetCurrentThreadId());
+void navesInimigas(NaveInvasora *naveInvasora) {
+
+	//_tprintf(TEXT("[Thread Nave inimiga %d]\n"), GetCurrentThreadId());
 
 	while (1) {
+		mPartilhada->Mapa[naveInvasora->Posicao.x][naveInvasora->Posicao.y].caracter = ' ';
 
+		if (((naveInvasora->Posicao.y % 2) != 0) && naveInvasora->Posicao.x < 18) {
+			naveInvasora->Posicao.x++;
+		}
+		else if(((naveInvasora->Posicao.y % 2) != 0) && naveInvasora->Posicao.x == 18) {
+			naveInvasora->Posicao.y++;
+			naveInvasora->Posicao.x--;
+		}
+		else if (((naveInvasora->Posicao.y % 2) == 0) && naveInvasora->Posicao.x >= 2) {
+			naveInvasora->Posicao.x--;
+			if (naveInvasora->Posicao.x == 1) {
+				naveInvasora->Posicao.y++;
+			}
+		}
+		else if(((naveInvasora->Posicao.y % 2) != 0) && naveInvasora->Posicao.x == 1){
+			naveInvasora->Posicao.y++;
+			naveInvasora->Posicao.x--;
+		}
+		Sleep(1000);
 	}
 
 	_tprintf(TEXT("[Thread Nave inimiga %d Vou desligar]\n"), GetCurrentThreadId());
@@ -128,30 +147,37 @@ void criarMapa() {
 	for (int i = 0; i < L; i++) {
 		for (int j = 0; j < C; j++) {
 			if (i == 0 || i == (L - 1)) {
-				mPartilhada->Mapa[j][i].caracter = '1';
+				mPartilhada->Mapa[j][i].caracter = '-';
 			}
 			else if (j == 0 || j == (C - 1)) {
-				mPartilhada->Mapa[j][i].caracter = '0';
+				mPartilhada->Mapa[j][i].caracter = '|';
 			}
-
+			else {
+				mPartilhada->Mapa[j][i].caracter = ' ';
+			}
 		}
 	}
 }
 
 void imprimeMapa() {
-	system("cls");
-	for (int i = 0; i < L; i++) {
-		for (int j = 0; j < C; j++) {
-			if (mPartilhada->Mapa[j][i].caracter == '1') {
-				_tprintf(TEXT("-"));
-			}
-			else if (mPartilhada->Mapa[j][i].caracter == '0') {
-				_tprintf(TEXT("|"));
-			}
-			else {
-				_tprintf(TEXT(" "));
-			}
+	while (1) {
+		system("cls");
+		for (int i = 0; i < mPartilhada->dConfiguraveis.nInimigas; i++) {
+			mPartilhada->Mapa[mPartilhada->nInimigas[i].Posicao.x][mPartilhada->nInimigas[i].Posicao.y].caracter = mPartilhada->nInimigas->Posicao.caracter;
+			//_tprintf(TEXT("%c"), mPartilhada->Mapa[mPartilhada->nInimigas[i].Posicao.x][mPartilhada->nInimigas[i].Posicao.y].caracter);
 		}
-		_tprintf(TEXT("\n"));
+
+		for (int i = 0; i < L; i++) {
+			for (int j = 0; j < C; j++) {
+				if (mPartilhada->Mapa[j][i].caracter != ' ') {
+					_tprintf(TEXT("%c"), mPartilhada->Mapa[j][i].caracter);
+				}
+				else {
+					_tprintf(TEXT(" "));
+				}
+			}
+			_tprintf(TEXT("\n"));
+		}
+		Sleep(1000);
 	}
 }
