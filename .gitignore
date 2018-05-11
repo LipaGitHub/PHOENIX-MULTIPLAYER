@@ -9,3 +9,5 @@ Servidor/Servidor/Debug/vc141.idb
 Servidor/.vs/Servidor/v15/.suo
 /DLL/.vs/DLL/v15
 /DLL/DLL/Debug
+*.suo
+Servidor/.vs/Servidor/v15/Browse.VC.db
