@@ -11,3 +11,9 @@ Servidor/.vs/Servidor/v15/.suo
 /DLL/DLL/Debug
 *.suo
 Servidor/.vs/Servidor/v15/Browse.VC.db
+*.suo
+Servidor/.vs/Servidor/v15/Browse.VC.db
+*.json
+.vs/slnx.sqlite
+*.pdb
+Servidor/Servidor/Debug/Servidor.Build.CppClean.log
