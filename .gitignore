@@ -1,19 +1,5 @@
-*.opendb
-Servidor/.vs/Servidor/v15/ipch/AutoPCH/223a9635663d17fd/SERVIDORSOURCE.ipch
-*.ipch
-Servidor/Servidor/Debug/Servidor.tlog/CL.read.1.tlog
-*.tlog
-Servidor/Servidor/Debug/vc141.idb
-*.obj
-*.db
-Servidor/.vs/Servidor/v15/.suo
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
 /DLL/.vs/DLL/v15
-/DLL/DLL/Debug
-*.suo
-Servidor/.vs/Servidor/v15/Browse.VC.db
-*.suo
-Servidor/.vs/Servidor/v15/Browse.VC.db
-*.json
-.vs/slnx.sqlite
-*.pdb
-Servidor/Servidor/Debug/Servidor.Build.CppClean.log
