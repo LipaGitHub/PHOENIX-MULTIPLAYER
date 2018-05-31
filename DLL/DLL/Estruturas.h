@@ -11,6 +11,9 @@
 #define C 20
 #define nJogadores 20
 #define nObjetos 10
+#define BufferSize 100
+#define Buffers 10
+
 
 #ifdef DLL_EXPORTS
 #define DLL_IMP_API __declspec(dllexport)
@@ -54,4 +57,10 @@ typedef struct {
 	DadosConfiguraveis dConfiguraveis;
 }DadosJogo;
 
-extern DLL_IMP_API DadosJogo *mPartilhada;
+typedef struct {
+	TCHAR buf[Buffers][BufferSize];
+	int in, out;
+}ZonaMsg;
+
+
+DLL_IMP_API void imprimeMapa(DadosJogo *mPartilhada);
