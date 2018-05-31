@@ -12,3 +12,5 @@
 *.opendb
 *.db-shm
 *.db-wal
+/Cliente/Cliente/Debug/Cliente.tlog
+/Cliente/Cliente/Debug
