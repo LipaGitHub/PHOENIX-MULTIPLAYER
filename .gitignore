@@ -8,3 +8,7 @@
 /Gateway/Gateway/Debug
 /Gateway/Gateway
 /Gateway/.vs/Gateway/v15
+/Cliente/.vs/Cliente/v15
+*.opendb
+*.db-shm
+*.db-wal
