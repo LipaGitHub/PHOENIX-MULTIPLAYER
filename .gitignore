@@ -13,3 +13,6 @@
 *.db-wal
 /Cliente/Cliente/Debug/Cliente.tlog
 /Cliente/Cliente/Debug
+*.suo
+Gateway/.vs/Gateway/v15/Browse.VC.db
+*.suo
