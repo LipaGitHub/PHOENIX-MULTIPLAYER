@@ -1,6 +1,3 @@
-#pragma once
-
-
 #include <windows.h>
 #include <tchar.h>
 
@@ -13,7 +10,16 @@
 #define nObjetos 10
 #define BufferSize 100
 #define Buffers 10
-
+#define CIMA TEXT("CIMA")
+#define BAIXO TEXT("BAIXO")
+#define ESQUERDA TEXT("ESQUERDA")
+#define DIREITA TEXT("DIREITA")
+#define MAXJOGADORESEXCEDIDO TEXT("Número máximo de jogadores excedido!")
+#define JOGOJAINICIADO TEXT("O jogo já foi iniciado pelo Servidor!")
+#define POSSIVELJOGAR TEXT("Não é possível iniciar jogar!")
+#define ADICIONARCLIENTE TEXT("Um cliente quer aderir ao jogo!")
+#define ERROADICIONARCLIENTE TEXT("Erro ocorrido! Um cliente não pode aderir ao jogo!")
+#define LIMITEADICIONARCLIENTE TEXT("Já não é possível adicionar um cliente ao jogo!")
 
 #ifdef DLL_EXPORTS
 #define DLL_IMP_API __declspec(dllexport)
@@ -41,6 +47,10 @@ typedef struct {
 }NaveInvasora;
 
 typedef struct {
+	DWORD processID; //guarda o ID do processo da thread que controla essa nave (cliente)
+	HANDLE tHandle;
+	TCHAR nome[25];		//nome do jogador
+	int pontos;		//manter o número de pontos atualizados do jogador
 	Celula Posicao;
 }NaveDefensora;
 
@@ -50,6 +60,10 @@ typedef struct {
 
 
 typedef struct {
+	bool jogoIniciado;	//variável para saber se o jogo já foi lançado pelo servidor ou não
+	bool estadoJogo;	//true = o jogo continua(ainda ninguem perdeu/ganhou); false = o jogo acabou
+	int nMaxJogadores;
+	int nJogadoresAtivos;
 	Celula Mapa[L][C];
 	NaveDefensora nDefensoras[nJogadores];
 	NaveInvasora nInimigas[nJogadores];
@@ -58,9 +72,11 @@ typedef struct {
 }DadosJogo;
 
 typedef struct {
+	NaveDefensora nave;
 	TCHAR buf[Buffers][BufferSize];
 	int in, out;
 }ZonaMsg;
 
 
 DLL_IMP_API void imprimeMapa(DadosJogo *mPartilhada);
+

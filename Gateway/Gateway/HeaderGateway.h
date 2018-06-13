@@ -1,13 +1,17 @@
 #pragma once
+#include "..\..\DLL\DLL\Estruturas.h"
 
 ZonaMsg *mPartilhadaZonaMsg;
+DadosJogo *mPartilhadaZonaDadosJogo;
 
-HANDLE PodeEscrever, PodeLer, hMutex;
+HANDLE PodeEscrever, PodeLer, hMutex, PodeAtenderCliente;
 TCHAR NomeMemoria[] = TEXT("Memoria Partilhada MSG");
 TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("Semáforo Pode Ler");
+TCHAR NomeSemaforoPodeAtenderCliente[] = TEXT("Semáforo Pode Atender Cliente");
 
 char init = 1;
 TCHAR cmd[BufferSize];
+
 
 
 void readTChars(TCHAR * p, int maxchars) {
@@ -19,8 +23,8 @@ void readTChars(TCHAR * p, int maxchars) {
 }
 
 int IniciarMemoriaMutexSemaforo() {
-	HANDLE hZonaMsg;
-	LARGE_INTEGER d;
+	HANDLE hZonaMsg, hDadosJogo;
+	LARGE_INTEGER d, t;
 
 	int pos;
 	char init = 1;
@@ -29,17 +33,19 @@ int IniciarMemoriaMutexSemaforo() {
 	hMutex = CreateMutex(NULL, FALSE, TEXT("Mutex in"));
 	PodeEscrever = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeEscrever);
 	PodeLer = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeLer);
+	PodeAtenderCliente = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeAtenderCliente);
 
 	d.QuadPart = sizeof(ZonaMsg);
-
+	t.QuadPart = sizeof(DadosJogo);
 	hZonaMsg = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d.HighPart, d.LowPart, NomeMemoria);
-
+	hDadosJogo = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READONLY, t.HighPart, t.LowPart, TEXT("Memoria Partilhada Dado Jogo"));
 	if (PodeEscrever == NULL || PodeLer == NULL) {
 		_tprintf(TEXT("[Erro]Criação de objectos do Windows(%d)\n"), GetLastError());
 		return -1;
 	}
 
 	mPartilhadaZonaMsg = (ZonaMsg*)MapViewOfFile(hZonaMsg, FILE_MAP_ALL_ACCESS, 0, 0, (SIZE_T)d.QuadPart);
+	mPartilhadaZonaDadosJogo = (DadosJogo*)MapViewOfFile(hDadosJogo, FILE_MAP_READ, 0, 0, (SIZE_T)t.QuadPart);
 
 	if (mPartilhadaZonaMsg == NULL) {
 		_tprintf(TEXT("[Erro]Mapeamento da memória partilhada(%d)\n"), GetLastError());
@@ -54,32 +60,92 @@ int IniciarMemoriaMutexSemaforo() {
 		ReleaseSemaphore(PodeEscrever, 10, NULL);
 	}
 	return 0;
-}              
+}
 
-DWORD WINAPI EscreverMsg() {
+void WINAPI GuardarJogador(HANDLE hPipe) {
+	TCHAR buf[25];
+	DWORD n;
 	int pos;
-
-	while (1) {
+	if (!mPartilhadaZonaDadosJogo->jogoIniciado) {
+		//Jogo ainda não foi lançado pelo Servidor
 		WaitForSingleObject(PodeEscrever, INFINITE);
 		//Esperar pelo mutex
 		WaitForSingleObject(hMutex, INFINITE);
 		// Copiar o valor de in para pos = i % Buffers;
 		pos = mPartilhadaZonaMsg->in;
 		//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
-		mPartilhadaZonaMsg->in = (mPartilhadaZonaMsg->in + 1) % Buffers;
+		mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
 
-		_tprintf(TEXT("CMD>"));
+		//Recebe o nome através de NamedPipe do Cliente
+		BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
+		buf[n / sizeof(TCHAR)] = '\0';
+		if (!ret || !n) {
+			_tprintf(TEXT("Ocorreu algum erro ao receber o username do jogador!\n"), n, buf);
+		}
 
-		readTChars(cmd, BufferSize);
-
-		_stprintf_s(mPartilhadaZonaMsg->buf[pos], BufferSize, cmd);
+		wcscpy_s(mPartilhadaZonaMsg->nave.nome, buf);
+		mPartilhadaZonaMsg->nave.tHandle = hPipe;
+		_stprintf_s(mPartilhadaZonaMsg->buf[pos], BufferSize, ADICIONARCLIENTE);
+		//_tprintf(TEXT("[GW] Recebi %d bytes do cliente '%s'... (ReadFile)\n"), n, buf);
 
 		// libertar o mutex
 		ReleaseMutex(hMutex);
 
-		_tprintf(TEXT("Escrever para buffer %d o valor '%s'\n"), pos, mPartilhadaZonaMsg->buf[pos]);
+		_tprintf(TEXT("[ENVIAR P/ SERVIDOR] %s '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
 		Sleep(1000);
 		ReleaseSemaphore(PodeLer, 1, NULL);
-	};
+	}
+	else {
+		//Iniciado o jogo
+		_tprintf(LIMITEADICIONARCLIENTE);
+	}
+}
 
+TCHAR * getNomeJogador(HANDLE hPipe) {
+	for (int i = 0; i < mPartilhadaZonaDadosJogo->nJogadoresAtivos; i++) {
+		if (mPartilhadaZonaDadosJogo->nDefensoras[i].tHandle == hPipe) {
+			return mPartilhadaZonaDadosJogo->nDefensoras[i].nome;
+		}
+	}
+}
+
+DWORD WINAPI EscreverMsg(HANDLE hPipe) {
+	TCHAR buf[256];
+	DWORD n;
+	TCHAR *nome;
+	int pos;
+	while (1) {
+		if (!mPartilhadaZonaDadosJogo->jogoIniciado) {
+			//Jogo ainda não foi lançado pelo Servidor
+			WaitForSingleObject(PodeEscrever, INFINITE);
+			//Esperar pelo mutex
+			WaitForSingleObject(hMutex, INFINITE);
+			// Copiar o valor de in para pos = i % Buffers;
+			pos = mPartilhadaZonaMsg->in;
+			//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
+			mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
+
+			/*_tprintf(TEXT("CMD>"));
+			readTChars(cmd, BufferSize);*/
+			BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
+			buf[n / sizeof(TCHAR)] = '\0';
+			if (!ret || !n)
+				break;
+			nome = getNomeJogador(hPipe);
+
+			_tprintf(TEXT("[%s] Recebi %d bytes: '%s'... (ReadFile)\n"), nome, n, buf);
+			_stprintf_s(mPartilhadaZonaMsg->buf[pos], BufferSize, buf);
+
+			// libertar o mutex
+			ReleaseMutex(hMutex);
+
+			_tprintf(TEXT("Escrever para buffer %d o valor '%s'\n"), pos, buf);
+			ReleaseSemaphore(PodeLer, 1, NULL);
+		}
+		else {
+			//Iniciado o jogo
+			_tprintf(LIMITEADICIONARCLIENTE);
+		}
+	}
+	return 0;
 }

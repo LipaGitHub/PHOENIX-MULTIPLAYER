@@ -90,11 +90,11 @@ int IniciarMemoriaMutexSemaforo() {
 	mPartilhadaDadosJogo = (DadosJogo*)MapViewOfFile(hDadosJogo, FILE_MAP_ALL_ACCESS, 0, 0, (SIZE_T)t.QuadPart);
 	mPartilhadaZonaMsg = (ZonaMsg*)MapViewOfFile(hZonaMsg, FILE_MAP_ALL_ACCESS, 0, 0, (SIZE_T)d.QuadPart);
 
-	if (mPartilhadaDadosJogo == NULL && mPartilhadaZonaMsg == NULL) {
+	if (mPartilhadaDadosJogo == NULL || mPartilhadaZonaMsg == NULL) {
 		_tprintf(TEXT("[Erro]Mapeamento da memória partilhada(%d)\n"), GetLastError());
 		return -1;
 	}
-
+	_tprintf(TEXT("[Sucesso]Criação da Memória Partilhada e Mutexes\n"));
 	return 0;
 }
 
@@ -102,6 +102,8 @@ int IniciarMemoriaMutexSemaforo() {
 void dadosIniciais() {
 	_tprintf(TEXT("\n\nDados Configuráveis:\n"));
 	_tprintf(TEXT("\n-------------------------------------\n"));
+	_tprintf(TEXT("Qual o número máximo de jogadores humanos no jogo? "));
+	_tscanf_s(TEXT("%d"), &(mPartilhadaDadosJogo->nMaxJogadores));
 	_tprintf(TEXT("Quantas Naves Inimigas? "));
 	_tscanf_s(TEXT("%d"), &(mPartilhadaDadosJogo->dConfiguraveis.nInimigas));
 	_tprintf(TEXT("Quantos Powerups? "));
@@ -141,11 +143,70 @@ DWORD WINAPI gerarInimigas() {
 	return 0;
 }
 
+void registaNave() {
+	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].processID = mPartilhadaZonaMsg->nave.processID;
+	wcscpy_s(mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].nome, mPartilhadaZonaMsg->nave.nome);
+	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].tHandle = mPartilhadaZonaMsg->nave.tHandle;
+	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = 10;
+	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
+	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
+	mPartilhadaDadosJogo->nJogadoresAtivos++;
+}
 
-
+void teclaCima() {
+	_tprintf(CIMA);
+}
+void teclaBaixo() {
+	_tprintf(BAIXO);
+}
+void teclaEsquerda() {
+	_tprintf(ESQUERDA);
+}
+void teclaDireita() {
+	_tprintf(DIREITA);
+}
 
 DWORD WINAPI leMsg() {
-		int pos;
+	int pos;
+	while (1)
+	{
+		WaitForSingleObject(PodeLer, INFINITE);
+		WaitForSingleObject(hMutex, INFINITE);
+		pos = mPartilhadaZonaMsg->out;
+		mPartilhadaZonaMsg->out = (mPartilhadaZonaMsg->out + 1) % Buffers;
+		ReleaseMutex(hMutex);
+		if (!mPartilhadaDadosJogo->jogoIniciado) {
+			if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ADICIONARCLIENTE)) == 0) {
+				registaNave();
+				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+			}
+			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], CIMA)) == 0) {
+				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+				teclaCima();
+			}
+			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], BAIXO)) == 0) {
+				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+				teclaBaixo();
+			}
+			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ESQUERDA)) == 0) {
+				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+				teclaEsquerda();
+			}
+			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], DIREITA)) == 0) {
+				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+				teclaDireita();
+			}
+		}
+		else {
+			return 0;
+		}
+		ReleaseSemaphore(PodeEscrever, 1, NULL);
+	}
+
+}
+
+DWORD WINAPI escreveMsg() {
+	int pos;
 	while (1)
 	{
 		WaitForSingleObject(PodeLer, INFINITE);
@@ -156,5 +217,4 @@ DWORD WINAPI leMsg() {
 		_tprintf(TEXT("Ler do Buffer %d o valor '%s'\n"), pos, mPartilhadaZonaMsg->buf[pos]); // Reader reads data
 		ReleaseSemaphore(PodeEscrever, 1, NULL);
 	}
-
 }
