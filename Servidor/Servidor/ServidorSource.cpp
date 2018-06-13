@@ -46,6 +46,19 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(TEXT(">>"));
 		_tscanf_s(TEXT("%d"), &(op));
 		if (op == 1) {
+
+			
+			if (!mPartilhadaDadosJogo->jogoCriado) {
+				criarMapa();
+				criaNavesInimigas(mPartilhadaDadosJogo->dConfiguraveis.nInimigas);
+				mPartilhadaDadosJogo->jogoCriado = true;
+				HANDLE imprimeMap = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)imprimeMapa, mPartilhadaDadosJogo, 0, NULL);
+				ReleaseSemaphore(PodeLer, 1, NULL);
+			}
+			else {
+				_tprintf(TEXT("Ainda não Foi criado um Jogo\n"));
+			}
+			
 			if (mPartilhadaDadosJogo->nJogadoresAtivos >= 1) {
 				//Faz com que nenhum cliente/jogador seja mais aceite no jogo
 				//WaitForSingleObject(hThreadLeZonaMsg, INFINITE);
@@ -55,12 +68,28 @@ int _tmain(int argc, LPTSTR argv[]) {
 			else {
 				_tprintf(TEXT("Ainda não houve jogadores conectados ao jogo.\n"));
 			}
+			
 		}
 	} while (mPartilhadaDadosJogo->nJogadoresAtivos == 0 || op == 2);
+	/*
+	do {
+		if (mPartilhadaDadosJogo->nJogadoresAtivos >= 1) {
+			//Faz com que nenhum cliente/jogador seja mais aceite no jogo
+			//WaitForSingleObject(hThreadLeZonaMsg, INFINITE);
+			mPartilhadaDadosJogo->jogoIniciado = true;
+			HANDLE hThreadEscreveZonaMsg = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)escreveMsg, NULL, 0, NULL);
+		}
+		else {
+			_tprintf(TEXT("Ainda não houve jogadores conectados ao jogo.\n"));
+		}
+		ReleaseSemaphore(PodeLer, 1, NULL);
 
+	} while ();
+	*/
 	//4.Decorrer do jogo
 	while (!mPartilhadaDadosJogo->estadoJogo) {
-
+		//HANDLE imprimeMap = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)imprimeMapa, mPartilhadaDadosJogo, 0, NULL);
+		//HANDLE lerBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)leMsg, NULL, 0, NULL);
 	}
 
 	//WaitForSingleObject(PodeLer, INFINITE);

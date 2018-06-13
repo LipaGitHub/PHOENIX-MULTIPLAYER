@@ -27,8 +27,6 @@
 #define DLL_IMP_API __declspec(dllimport)
 #endif
 
-
-
 typedef struct {
 	int x, y;
 	char caracter;
@@ -62,6 +60,7 @@ typedef struct {
 typedef struct {
 	bool jogoIniciado;	//variável para saber se o jogo já foi lançado pelo servidor ou não
 	bool estadoJogo;	//true = o jogo continua(ainda ninguem perdeu/ganhou); false = o jogo acabou
+	bool jogoCriado;    //Variavel que representa se o Servidor já criou um Mapa/Jogo
 	int nMaxJogadores;
 	int nJogadoresAtivos;
 	Celula Mapa[L][C];
@@ -76,6 +75,8 @@ typedef struct {
 	TCHAR buf[Buffers][BufferSize];
 	int in, out;
 }ZonaMsg;
+
+
 
 
 DLL_IMP_API void imprimeMapa(DadosJogo *mPartilhada);

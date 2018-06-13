@@ -144,7 +144,8 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 		}
 		else {
 			//Iniciado o jogo
-			_tprintf(LIMITEADICIONARCLIENTE);
+			_tprintf(TEXT("Jogo Não Iniciado"));
+			//_tprintf(LIMITEADICIONARCLIENTE);
 		}
 	}
 	return 0;

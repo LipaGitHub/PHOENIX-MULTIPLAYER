@@ -6,7 +6,7 @@
 #include <tchar.h>
 #include <fcntl.h>
 #include <io.h>
-#include "..\..\DLL\DLL\Estruturas.h"
+
 #include "HeaderGateway.h"
 
 

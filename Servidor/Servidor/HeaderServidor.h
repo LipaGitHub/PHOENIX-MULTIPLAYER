@@ -10,13 +10,15 @@ TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoP
 DWORD *threadId;
 
 void criaNavesInimigas(int nCriar) {
+	WaitForSingleObject(hMutex, INFINITE);
 	for (int i = 0; i < nCriar; i++) {
 		mPartilhadaDadosJogo->nInimigas[i].Posicao.caracter = 'I';
 		mPartilhadaDadosJogo->nInimigas[i].Posicao.x = 8 + i;
 		mPartilhadaDadosJogo->nInimigas[i].Posicao.y = 1;
 	}
+	ReleaseMutex(hMutex);
 	_tprintf(TEXT("\n--- Naves invasoras criadas ---\n"));
-	system("pause");
+	//system("pause");
 }
 
 
@@ -27,8 +29,9 @@ void navesInimigas(NaveInvasora *naveInvasora) {
 	while (1) {
 		//		[ATENÇAO]
 		//QUANDO ESCREVE OU LE PROTEJER Memoria partilhada
+		WaitForSingleObject(hMutex, INFINITE);
 		mPartilhadaDadosJogo->Mapa[naveInvasora->Posicao.x][naveInvasora->Posicao.y].caracter = ' ';
-
+		ReleaseMutex(hMutex);
 		if (((naveInvasora->Posicao.y % 2) != 0) && naveInvasora->Posicao.x < 18) {
 			naveInvasora->Posicao.x++;
 		}
@@ -54,6 +57,7 @@ void navesInimigas(NaveInvasora *naveInvasora) {
 
 
 void criarMapa() {
+	WaitForSingleObject(hMutex, INFINITE);
 	for (int i = 0; i < L; i++) {
 		for (int j = 0; j < C; j++) {
 			if (i == 0 || i == (L - 1)) {
@@ -67,6 +71,7 @@ void criarMapa() {
 			}
 		}
 	}
+	ReleaseMutex(hMutex);
 }
 
 int IniciarMemoriaMutexSemaforo() {
@@ -144,6 +149,7 @@ DWORD WINAPI gerarInimigas() {
 }
 
 void registaNave() {
+	WaitForSingleObject(hMutex, INFINITE);
 	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].processID = mPartilhadaZonaMsg->nave.processID;
 	wcscpy_s(mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].nome, mPartilhadaZonaMsg->nave.nome);
 	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].tHandle = mPartilhadaZonaMsg->nave.tHandle;
@@ -151,10 +157,21 @@ void registaNave() {
 	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
 	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
 	mPartilhadaDadosJogo->nJogadoresAtivos++;
+	mPartilhadaDadosJogo->Mapa[10][10].caracter = 'D';
+	ReleaseMutex(hMutex);
 }
 
 void teclaCima() {
+	//TEM QUE SER RETIFICADO,
+	//PESQUISAR PELO PROCESSID DO CLIENTE E ALTERAR NAQUELE CLIENTE
 	_tprintf(CIMA);
+	int x = mPartilhadaDadosJogo->nDefensoras[ 0/*mPartilhadaDadosJogo->nJogadoresAtivos*/].Posicao.x, 
+		y = mPartilhadaDadosJogo->nDefensoras[0/*mPartilhadaDadosJogo->nJogadoresAtivos*/].Posicao.y;
+	mPartilhadaDadosJogo->Mapa[x][y].caracter = ' ';
+	mPartilhadaDadosJogo->nDefensoras[0].Posicao.x = x;
+	mPartilhadaDadosJogo->nDefensoras[0].Posicao.y = y-1;
+	//[->linha][coluna]
+	mPartilhadaDadosJogo->Mapa[x][y-1].caracter = 'D';
 }
 void teclaBaixo() {
 	_tprintf(BAIXO);
