@@ -13,52 +13,13 @@
 #define PIPE_NAME TEXT("\\\\.\\pipe\\gateway")
 #define N 10
 #define TAM 250
-
+BOOL fConnected = false;
 HANDLE hCli[10];
+HANDLE hThread;
+DWORD dwThreadId = 0;
 int continua = 1;
 
-void WINAPI PossivelJogar(HANDLE hPipe) {
-	TCHAR buf[256];
-	DWORD n;
-	while (1) {
-		if (mPartilhadaZonaDadosJogo->jogoIniciado == true) {
-			wcscpy_s(buf, JOGOJAINICIADO);
-			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
-		}
-		else if (mPartilhadaZonaDadosJogo->nJogadoresAtivos >= mPartilhadaZonaDadosJogo->nMaxJogadores) {
-			wcscpy_s(buf, MAXJOGADORESEXCEDIDO);
-			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
-		}
-		else {
-			wcscpy_s(buf, POSSIVELJOGAR);
-			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
-			break;
-		}
-	}
-}
 
-
-
-void WINAPI RecebeTeclaCliente(HANDLE hPipe) {
-	//HANDLE hPipe;
-	TCHAR buf[256];
-	DWORD n;
-	TCHAR *nome;
-	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)GuardarJogador, hPipe, 0, NULL);
-	WaitForSingleObject(GuardarJogadorBuffer, INFINITE);
-
-	HANDLE EscreverMsgBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)EscreverMsg, hPipe, 0, NULL);
-	WaitForSingleObject(EscreverMsgBuffer, INFINITE);
-
-	/*BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
-	buf[n / sizeof(TCHAR)] = '\0';
-	if (!ret || !n)
-	break;
-	nome = getNomeJogador(hPipe);
-
-	_tprintf(TEXT("[%s] Recebi %d bytes: '%s'... (ReadFile)\n"), nome, n, buf);*/
-	//aqui vai ter avisar o servidor com mensagens
-}
 
 DWORD WINAPI RecebeCliente() {
 	int i;
@@ -78,12 +39,12 @@ DWORD WINAPI RecebeCliente() {
 		}
 		_tprintf(TEXT("[GATEWAY] Handle do pipe criado\n"));
 
-		//Espera que um cliente se junte ao jogo
-		if (ConnectNamedPipe(hPipe, NULL) != FALSE) {
-			HANDLE possivelJogar = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PossivelJogar, hPipe, 0, NULL);
-			WaitForSingleObject(possivelJogar, INFINITE);
-			HANDLE TrataPedidosCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeTeclaCliente, hPipe, 0, NULL);
+		fConnected = ConnectNamedPipe(hPipe, NULL);
+		if (fConnected) {
+			hThread = CreateThread(NULL, 0, ThreadAtendeCliente, (LPVOID)hPipe, 0, &dwThreadId);
 		}
+
+
 		Sleep(10000);
 	}
 	/*DisconnectNamedPipe(hPipe);

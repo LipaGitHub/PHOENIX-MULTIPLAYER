@@ -11,7 +11,7 @@ TCHAR NomeSemaforoPodeAtenderCliente[] = TEXT("Semáforo Pode Atender Cliente");
 
 char init = 1;
 TCHAR cmd[BufferSize];
-
+void WINAPI RecebeTeclaCliente(HANDLE hPipe);
 
 
 void readTChars(TCHAR * p, int maxchars) {
@@ -21,6 +21,33 @@ void readTChars(TCHAR * p, int maxchars) {
 	if (p[len - 1] == TEXT('\n'))
 		p[len - 1] = TEXT('\0');
 }
+
+void WINAPI PossivelJogar(HANDLE hPipe) {
+	TCHAR buf[256];
+	DWORD n;
+	while (1) {
+		/*
+		if (mPartilhadaZonaDadosJogo->jogoIniciado == true) {
+		wcscpy_s(buf, JOGOJAINICIADO);
+		WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
+		}
+		else*/
+		if (mPartilhadaZonaDadosJogo->nJogadoresAtivos >= mPartilhadaZonaDadosJogo->nMaxJogadores) {
+			wcscpy_s(buf, MAXJOGADORESEXCEDIDO);
+			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
+		}
+		else {
+			wcscpy_s(buf, POSSIVELJOGAR);
+			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
+			break;
+		}
+	}
+}
+
+
+
+
+
 
 int IniciarMemoriaMutexSemaforo() {
 	HANDLE hZonaMsg, hDadosJogo;
@@ -66,11 +93,11 @@ void WINAPI GuardarJogador(HANDLE hPipe) {
 	TCHAR buf[25];
 	DWORD n;
 	int pos;
-	if (!mPartilhadaZonaDadosJogo->jogoIniciado) {
+	if (mPartilhadaZonaDadosJogo->jogoIniciado || !(mPartilhadaZonaDadosJogo->nJogadoresAtivos >= mPartilhadaZonaDadosJogo->nMaxJogadores)) {
 		//Jogo ainda não foi lançado pelo Servidor
 		WaitForSingleObject(PodeEscrever, INFINITE);
 		//Esperar pelo mutex
-		WaitForSingleObject(hMutex, INFINITE);
+		//WaitForSingleObject(hMutex, INFINITE);
 		// Copiar o valor de in para pos = i % Buffers;
 		pos = mPartilhadaZonaMsg->in;
 		//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
@@ -107,6 +134,15 @@ TCHAR * getNomeJogador(HANDLE hPipe) {
 			return mPartilhadaZonaDadosJogo->nDefensoras[i].nome;
 		}
 	}
+}
+
+DWORD WINAPI ThreadAtendeCliente(LPVOID param) {
+	HANDLE hPipe = (HANDLE)param;
+	HANDLE possivelJogar = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PossivelJogar, hPipe, 0, NULL);
+	WaitForSingleObject(possivelJogar, INFINITE);
+	HANDLE TrataPedidosCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeTeclaCliente, hPipe, 0, NULL);
+
+	return 0;
 }
 
 DWORD WINAPI EscreverMsg(HANDLE hPipe) {
@@ -149,4 +185,25 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 		}
 	}
 	return 0;
+}
+
+void WINAPI RecebeTeclaCliente(HANDLE hPipe) {
+	//HANDLE hPipe;
+	TCHAR buf[256];
+	DWORD n;
+	TCHAR *nome;
+	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)GuardarJogador, hPipe, 0, NULL);
+	WaitForSingleObject(GuardarJogadorBuffer, INFINITE);
+
+	HANDLE EscreverMsgBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)EscreverMsg, hPipe, 0, NULL);
+	WaitForSingleObject(EscreverMsgBuffer, INFINITE);
+
+	/*BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
+	buf[n / sizeof(TCHAR)] = '\0';
+	if (!ret || !n)
+	break;
+	nome = getNomeJogador(hPipe);
+
+	_tprintf(TEXT("[%s] Recebi %d bytes: '%s'... (ReadFile)\n"), nome, n, buf);*/
+	//aqui vai ter avisar o servidor com mensagens
 }

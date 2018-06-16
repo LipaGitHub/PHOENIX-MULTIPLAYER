@@ -4,19 +4,19 @@ DadosJogo *mPartilhadaDadosJogo;
 ZonaMsg *mPartilhadaZonaMsg;
 Celula *Tiros;
 
-HANDLE PodeEscrever, PodeLer, hMutex;
+HANDLE PodeEscrever, PodeLer, hMutex, hMutexMP;
 TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("Semáforo Pode Ler");
 
 DWORD *threadId;
 
 void criaNavesInimigas(int nCriar) {
-	WaitForSingleObject(hMutex, INFINITE);
+	WaitForSingleObject(hMutexMP, INFINITE);
 	for (int i = 0; i < nCriar; i++) {
 		mPartilhadaDadosJogo->nInimigas[i].Posicao.caracter = 'I';
 		mPartilhadaDadosJogo->nInimigas[i].Posicao.x = 8 + i;
 		mPartilhadaDadosJogo->nInimigas[i].Posicao.y = 1;
 	}
-	ReleaseMutex(hMutex);
+	ReleaseMutex(hMutexMP);
 	_tprintf(TEXT("\n--- Naves invasoras criadas ---\n"));
 	//system("pause");
 }
@@ -29,9 +29,9 @@ void navesInimigas(NaveInvasora *naveInvasora) {
 	while (1) {
 		//		[ATENÇAO]
 		//QUANDO ESCREVE OU LE PROTEJER Memoria partilhada
-		WaitForSingleObject(hMutex, INFINITE);
+		WaitForSingleObject(hMutexMP, INFINITE);
 		mPartilhadaDadosJogo->Mapa[naveInvasora->Posicao.x][naveInvasora->Posicao.y].caracter = ' ';
-		ReleaseMutex(hMutex);
+		ReleaseMutex(hMutexMP);
 		if (((naveInvasora->Posicao.y % 2) != 0) && naveInvasora->Posicao.x < 18) {
 			naveInvasora->Posicao.x++;
 		}
@@ -57,7 +57,7 @@ void navesInimigas(NaveInvasora *naveInvasora) {
 
 
 void criarMapa() {
-	WaitForSingleObject(hMutex, INFINITE);
+	WaitForSingleObject(hMutexMP, INFINITE);
 	for (int i = 0; i < L; i++) {
 		for (int j = 0; j < C; j++) {
 			if (i == 0 || i == (L - 1)) {
@@ -71,7 +71,7 @@ void criarMapa() {
 			}
 		}
 	}
-	ReleaseMutex(hMutex);
+	ReleaseMutex(hMutexMP);
 }
 
 int IniciarMemoriaMutexSemaforo() {
@@ -79,6 +79,7 @@ int IniciarMemoriaMutexSemaforo() {
 	LARGE_INTEGER t, d;
 
 	hMutex = CreateMutex(NULL, FALSE, TEXT("Mutex Out"));
+	hMutexMP = CreateMutex(NULL, FALSE, TEXT("Mutex MP"));
 	PodeEscrever = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeEscrever);
 	PodeLer = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeLer);
 
@@ -128,19 +129,19 @@ void dadosIniciais() {
 
 DWORD WINAPI gerarInimigas() {
 	HANDLE *tIni;
-	HANDLE hMutex;
+	HANDLE hMutexMP;
 
 	tIni = (HANDLE*)malloc(mPartilhadaDadosJogo->dConfiguraveis.nInimigas * sizeof(HANDLE));		//alocação de memória para o n° de naves invasoras
 	threadId = (DWORD *)malloc(mPartilhadaDadosJogo->dConfiguraveis.nInimigas * sizeof(DWORD));	//alocação de memória para os ID's de cada thread de nave invasora
-	hMutex = CreateMutex(NULL, FALSE, NULL);
-	if (hMutex == NULL) {
+	hMutexMP = CreateMutex(NULL, FALSE, NULL);
+	if (hMutexMP == NULL) {
 		_tprintf(TEXT("Deu erro no mutex..."));
 	}
 
 	for (int i = 0; i < mPartilhadaDadosJogo->dConfiguraveis.nInimigas; i++) {
-		WaitForSingleObject(hMutex, INFINITE);
+		WaitForSingleObject(hMutexMP, INFINITE);
 		tIni[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)navesInimigas, &(mPartilhadaDadosJogo->nInimigas[i]), 0, &threadId[i]);
-		ReleaseMutex(hMutex);
+		ReleaseMutex(hMutexMP);
 	}
 
 	WaitForMultipleObjects(mPartilhadaDadosJogo->dConfiguraveis.nInimigas, tIni, TRUE, INFINITE);
@@ -149,15 +150,32 @@ DWORD WINAPI gerarInimigas() {
 }
 
 void registaNave() {
+	int pos;
 	WaitForSingleObject(hMutex, INFINITE);
 	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].processID = mPartilhadaZonaMsg->nave.processID;
 	wcscpy_s(mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].nome, mPartilhadaZonaMsg->nave.nome);
 	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].tHandle = mPartilhadaZonaMsg->nave.tHandle;
-	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = 10;
-	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
-	mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
+	if (mPartilhadaDadosJogo->nJogadoresAtivos == 0) {
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = 10;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
+		mPartilhadaDadosJogo->Mapa[10][10].caracter = 'D';
+	}else if (mPartilhadaDadosJogo->nJogadoresAtivos % 2 == 0) {
+		pos = 10 + mPartilhadaDadosJogo->nJogadoresAtivos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = pos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = pos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
+		mPartilhadaDadosJogo->Mapa[pos][pos].caracter = 'D';
+	}
+	else{
+		pos = 10 - mPartilhadaDadosJogo->nJogadoresAtivos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = pos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = pos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
+		mPartilhadaDadosJogo->Mapa[pos][pos].caracter = 'D';
+	}
+	
 	mPartilhadaDadosJogo->nJogadoresAtivos++;
-	mPartilhadaDadosJogo->Mapa[10][10].caracter = 'D';
+	
 	ReleaseMutex(hMutex);
 }
 
@@ -217,7 +235,7 @@ DWORD WINAPI leMsg() {
 		else {
 			return 0;
 		}
-		ReleaseSemaphore(PodeEscrever, 1, NULL);
+		ReleaseSemaphore(PodeEscrever, mPartilhadaDadosJogo->nMaxJogadores, NULL);
 	}
 
 }
@@ -232,6 +250,6 @@ DWORD WINAPI escreveMsg() {
 		mPartilhadaZonaMsg->out = (mPartilhadaZonaMsg->out + 1) % Buffers;
 		ReleaseMutex(hMutex);
 		_tprintf(TEXT("Ler do Buffer %d o valor '%s'\n"), pos, mPartilhadaZonaMsg->buf[pos]); // Reader reads data
-		ReleaseSemaphore(PodeEscrever, 1, NULL);
+		ReleaseSemaphore(PodeEscrever, mPartilhadaDadosJogo->nMaxJogadores, NULL);
 	}
 }
