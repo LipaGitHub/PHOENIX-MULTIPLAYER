@@ -159,35 +159,36 @@ void registaNave() {
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = 10;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
 		mPartilhadaDadosJogo->Mapa[10][10].caracter = 'D';
-	}else if (mPartilhadaDadosJogo->nJogadoresAtivos % 2 == 0) {
+	}
+	else if (mPartilhadaDadosJogo->nJogadoresAtivos % 2 == 0) {
 		pos = 10 + mPartilhadaDadosJogo->nJogadoresAtivos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = pos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = pos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
 		mPartilhadaDadosJogo->Mapa[pos][pos].caracter = 'D';
 	}
-	else{
+	else {
 		pos = 10 - mPartilhadaDadosJogo->nJogadoresAtivos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = pos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = pos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
 		mPartilhadaDadosJogo->Mapa[pos][pos].caracter = 'D';
 	}
-	
+
 	mPartilhadaDadosJogo->nJogadoresAtivos++;
-	
+
 	ReleaseMutex(hMutex);
 }
 
-void teclaCima() {
+void teclaCima(int w) {
 	//TEM QUE SER RETIFICADO,
 	//PESQUISAR PELO PROCESSID DO CLIENTE E ALTERAR NAQUELE CLIENTE
 	_tprintf(CIMA);
-	int x = mPartilhadaDadosJogo->nDefensoras[ 0/*mPartilhadaDadosJogo->nJogadoresAtivos*/].Posicao.x, 
-		y = mPartilhadaDadosJogo->nDefensoras[0/*mPartilhadaDadosJogo->nJogadoresAtivos*/].Posicao.y;
+	int x = mPartilhadaDadosJogo->nDefensoras[w].Posicao.x,
+		y = mPartilhadaDadosJogo->nDefensoras[w].Posicao.y;
 	mPartilhadaDadosJogo->Mapa[x][y].caracter = ' ';
-	mPartilhadaDadosJogo->nDefensoras[0].Posicao.x = x;
-	mPartilhadaDadosJogo->nDefensoras[0].Posicao.y = y-1;
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.x = x;
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.y = y - 1;
 	//[->linha][coluna]
 	mPartilhadaDadosJogo->Mapa[x][y-1].caracter = 'D';
 }
@@ -202,35 +203,46 @@ void teclaDireita() {
 }
 
 DWORD WINAPI leMsg() {
-	int pos;
+	int pos, w;
 	while (1)
 	{
 		WaitForSingleObject(PodeLer, INFINITE);
 		WaitForSingleObject(hMutex, INFINITE);
-		pos = mPartilhadaZonaMsg->out;
+		pos = mPartilhadaDadosJogo->nJogadoresAtivos;
 		mPartilhadaZonaMsg->out = (mPartilhadaZonaMsg->out + 1) % Buffers;
 		ReleaseMutex(hMutex);
 		if (!mPartilhadaDadosJogo->jogoIniciado) {
-			if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ADICIONARCLIENTE)) == 0) {
-				registaNave();
-				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+			if (!mPartilhadaZonaMsg->mexer) {
+				if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ADICIONARCLIENTE)) == 0) {
+					registaNave();
+					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+				}
 			}
-			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], CIMA)) == 0) {
-				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-				teclaCima();
+			else {
+				for (int i = 0; i < mPartilhadaDadosJogo->nMaxJogadores; i++) {
+					if ((_tcscmp(mPartilhadaDadosJogo->nDefensoras[i].nome, mPartilhadaZonaMsg->nave.nome)) == 0) {
+						pos = i;
+						break;
+					}
+				}
+				if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], CIMA)) == 0) {
+					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+					teclaCima(pos);
+				}
+				else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], BAIXO)) == 0) {
+					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+					teclaBaixo();
+				}
+				else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ESQUERDA)) == 0) {
+					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+					teclaEsquerda();
+				}
+				else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], DIREITA)) == 0) {
+					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
+					teclaDireita();
+				}
 			}
-			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], BAIXO)) == 0) {
-				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-				teclaBaixo();
-			}
-			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ESQUERDA)) == 0) {
-				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-				teclaEsquerda();
-			}
-			else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], DIREITA)) == 0) {
-				_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-				teclaDireita();
-			}
+
 		}
 		else {
 			return 0;

@@ -99,10 +99,10 @@ void WINAPI GuardarJogador(HANDLE hPipe) {
 		//Esperar pelo mutex
 		//WaitForSingleObject(hMutex, INFINITE);
 		// Copiar o valor de in para pos = i % Buffers;
-		pos = mPartilhadaZonaMsg->in;
+		pos = mPartilhadaZonaDadosJogo->nJogadoresAtivos;
 		//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
 		mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
-
+		mPartilhadaZonaMsg->mexer = false;
 		//Recebe o nome através de NamedPipe do Cliente
 		BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
 		buf[n / sizeof(TCHAR)] = '\0';
@@ -140,6 +140,8 @@ DWORD WINAPI ThreadAtendeCliente(LPVOID param) {
 	HANDLE hPipe = (HANDLE)param;
 	HANDLE possivelJogar = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PossivelJogar, hPipe, 0, NULL);
 	WaitForSingleObject(possivelJogar, INFINITE);
+	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)GuardarJogador, hPipe, 0, NULL);
+	WaitForSingleObject(GuardarJogadorBuffer, INFINITE);
 	HANDLE TrataPedidosCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeTeclaCliente, hPipe, 0, NULL);
 
 	return 0;
@@ -157,7 +159,16 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 			//Esperar pelo mutex
 			WaitForSingleObject(hMutex, INFINITE);
 			// Copiar o valor de in para pos = i % Buffers;
-			pos = mPartilhadaZonaMsg->in;
+			nome = getNomeJogador(hPipe);
+			wcscpy_s(mPartilhadaZonaMsg->nave.nome, nome);
+			for (int i = 0; i < mPartilhadaZonaDadosJogo->nMaxJogadores; i++) {
+				if ((_tcscmp(mPartilhadaZonaDadosJogo->nDefensoras[i].nome, mPartilhadaZonaMsg->nave.nome)) == 0) {
+					pos = i;
+					break;
+				}
+			}
+			//pos = mPartilhadaZonaDadosJogo->nJogadoresAtivos;
+			
 			//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
 			mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
 
@@ -167,10 +178,11 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 			buf[n / sizeof(TCHAR)] = '\0';
 			if (!ret || !n)
 				break;
-			nome = getNomeJogador(hPipe);
-
+			
+			mPartilhadaZonaMsg->mexer = true;
 			_tprintf(TEXT("[%s] Recebi %d bytes: '%s'... (ReadFile)\n"), nome, n, buf);
-			_stprintf_s(mPartilhadaZonaMsg->buf[pos], BufferSize, buf);
+			wcscpy_s(mPartilhadaZonaMsg->buf[pos], buf);
+			//_stprintf_s(mPartilhadaZonaMsg->buf[pos], BufferSize, buf);
 
 			// libertar o mutex
 			ReleaseMutex(hMutex);
@@ -192,8 +204,7 @@ void WINAPI RecebeTeclaCliente(HANDLE hPipe) {
 	TCHAR buf[256];
 	DWORD n;
 	TCHAR *nome;
-	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)GuardarJogador, hPipe, 0, NULL);
-	WaitForSingleObject(GuardarJogadorBuffer, INFINITE);
+	
 
 	HANDLE EscreverMsgBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)EscreverMsg, hPipe, 0, NULL);
 	WaitForSingleObject(EscreverMsgBuffer, INFINITE);

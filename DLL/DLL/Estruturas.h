@@ -71,6 +71,7 @@ typedef struct {
 }DadosJogo;
 
 typedef struct {
+	bool mexer;
 	NaveDefensora nave;
 	TCHAR buf[Buffers][BufferSize];
 	int in, out;
