@@ -71,10 +71,17 @@ typedef struct {
 }DadosJogo;
 
 typedef struct {
+	NaveDefensora nDefensoras[nJogadores];
+	NaveInvasora nInimigas[nJogadores];
+	Powerups nPowerups[nObjetos];
+}MsgCliente;
+
+typedef struct {
 	bool mexer;
 	NaveDefensora nave;
 	TCHAR buf[Buffers][BufferSize];
 	int in, out;
+	MsgCliente dadosCliente;
 }ZonaMsg;
 
 

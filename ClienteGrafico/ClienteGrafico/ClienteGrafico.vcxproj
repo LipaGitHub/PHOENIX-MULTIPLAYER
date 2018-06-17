@@ -165,7 +165,10 @@
     <ResourceCompile Include="ClienteGrafico.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\..\Downloads\space-ship.bmp" />
+    <Image Include="..\..\..\space-ship.bmp" />
     <Image Include="ClienteGrafico.ico" />
+    <Image Include="E:\ISEC\Ano Passado\SO2\Outros Trabalhos\SO2_TPlastversion\SO2_TP\SO2_GUI\SO2_GUI\bitmaps\bricksbmp.bmp" />
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

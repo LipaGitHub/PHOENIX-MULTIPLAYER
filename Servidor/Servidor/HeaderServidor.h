@@ -4,7 +4,7 @@ DadosJogo *mPartilhadaDadosJogo;
 ZonaMsg *mPartilhadaZonaMsg;
 Celula *Tiros;
 
-HANDLE PodeEscrever, PodeLer, hMutex, hMutexMP;
+HANDLE PodeEscrever, PodeLer, hMutex, hMutexMP, EventoMutex;
 TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("Semáforo Pode Ler");
 
 DWORD *threadId;
@@ -82,6 +82,7 @@ int IniciarMemoriaMutexSemaforo() {
 	hMutexMP = CreateMutex(NULL, FALSE, TEXT("Mutex MP"));
 	PodeEscrever = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeEscrever);
 	PodeLer = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeLer);
+	EventoMutex = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	t.QuadPart = sizeof(DadosJogo);
 	d.QuadPart = sizeof(ZonaMsg);
@@ -272,7 +273,8 @@ DWORD WINAPI leMsg() {
 		else {
 			return 0;
 		}
-		ReleaseSemaphore(PodeEscrever, mPartilhadaDadosJogo->nMaxJogadores, NULL);
+		ReleaseSemaphore(PodeEscrever, 1, NULL);
+		//Dispulta evento de atualização
 	}
 
 }

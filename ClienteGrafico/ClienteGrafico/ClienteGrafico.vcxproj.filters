@@ -48,5 +48,14 @@
     <Image Include="ClienteGrafico.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="..\..\..\..\Downloads\space-ship.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="E:\ISEC\Ano Passado\SO2\Outros Trabalhos\SO2_TPlastversion\SO2_TP\SO2_GUI\SO2_GUI\bitmaps\bricksbmp.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\..\..\space-ship.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -45,10 +45,6 @@ void WINAPI PossivelJogar(HANDLE hPipe) {
 }
 
 
-
-
-
-
 int IniciarMemoriaMutexSemaforo() {
 	HANDLE hZonaMsg, hDadosJogo;
 	LARGE_INTEGER d, t;
