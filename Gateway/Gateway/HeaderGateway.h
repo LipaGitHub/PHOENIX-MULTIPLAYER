@@ -94,21 +94,26 @@ void WINAPI GuardarJogador(HANDLE hPipe) {
 	DWORD n;
 	int pos;
 	if (mPartilhadaZonaDadosJogo->jogoIniciado || !(mPartilhadaZonaDadosJogo->nJogadoresAtivos >= mPartilhadaZonaDadosJogo->nMaxJogadores)) {
-		//Jogo ainda não foi lançado pelo Servidor
-		WaitForSingleObject(PodeEscrever, INFINITE);
-		//Esperar pelo mutex
-		//WaitForSingleObject(hMutex, INFINITE);
-		// Copiar o valor de in para pos = i % Buffers;
-		pos = mPartilhadaZonaDadosJogo->nJogadoresAtivos;
-		//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
-		mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
-		mPartilhadaZonaMsg->mexer = false;
-		//Recebe o nome através de NamedPipe do Cliente
 		BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
 		buf[n / sizeof(TCHAR)] = '\0';
 		if (!ret || !n) {
 			_tprintf(TEXT("Ocorreu algum erro ao receber o username do jogador!\n"), n, buf);
 		}
+		
+		//Jogo ainda não foi lançado pelo Servidor
+		WaitForSingleObject(PodeEscrever, INFINITE);
+		//Esperar pelo mutex
+		WaitForSingleObject(hMutex, INFINITE);
+		// Copiar o valor de in para pos = i % Buffers;
+
+		/**/
+
+		pos = mPartilhadaZonaDadosJogo->nJogadoresAtivos;
+		//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
+		mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
+		mPartilhadaZonaMsg->mexer = false;
+		//Recebe o nome através de NamedPipe do Cliente
+		
 
 		wcscpy_s(mPartilhadaZonaMsg->nave.nome, buf);
 		mPartilhadaZonaMsg->nave.tHandle = hPipe;
@@ -154,10 +159,17 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 	int pos;
 	while (1) {
 		if (!mPartilhadaZonaDadosJogo->jogoIniciado) {
-			//Jogo ainda não foi lançado pelo Servidor
+
+			BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
+			buf[n / sizeof(TCHAR)] = '\0';
+			if (!ret || !n)
+				break;
+			
 			WaitForSingleObject(PodeEscrever, INFINITE);
-			//Esperar pelo mutex
+			
 			WaitForSingleObject(hMutex, INFINITE);
+
+			/**/
 			// Copiar o valor de in para pos = i % Buffers;
 			nome = getNomeJogador(hPipe);
 			wcscpy_s(mPartilhadaZonaMsg->nave.nome, nome);
@@ -174,10 +186,7 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 
 			/*_tprintf(TEXT("CMD>"));
 			readTChars(cmd, BufferSize);*/
-			BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
-			buf[n / sizeof(TCHAR)] = '\0';
-			if (!ret || !n)
-				break;
+			
 			
 			mPartilhadaZonaMsg->mexer = true;
 			_tprintf(TEXT("[%s] Recebi %d bytes: '%s'... (ReadFile)\n"), nome, n, buf);

@@ -1,3 +1,4 @@
-﻿  ServidorSource.cpp
-c:\users\lipap\desktop\phoenix-multiplayer\servidor\servidor\headerservidor.h(206): warning C4101: 'w': unreferenced local variable
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppClean.targets(76,5): warning : The process cannot access the file 'c:\users\lipap\desktop\phoenix-multiplayer\servidor\servidor\debug\vc141.pdb' because it is being used by another process.
+  ServidorSource.cpp
+c:\users\lipap\desktop\phoenix-multiplayer\servidor\servidor\headerservidor.h(231): warning C4101: 'w': unreferenced local variable
   Servidor.vcxproj -> C:\Users\lipap\Desktop\PHOENIX-MULTIPLAYER\Servidor\Debug\Servidor.exe

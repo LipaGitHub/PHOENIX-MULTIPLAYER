@@ -163,16 +163,16 @@ void registaNave() {
 	else if (mPartilhadaDadosJogo->nJogadoresAtivos % 2 == 0) {
 		pos = 10 + mPartilhadaDadosJogo->nJogadoresAtivos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = pos;
-		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = pos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
-		mPartilhadaDadosJogo->Mapa[pos][pos].caracter = 'D';
+		mPartilhadaDadosJogo->Mapa[pos][10].caracter = 'D';
 	}
 	else {
 		pos = 10 - mPartilhadaDadosJogo->nJogadoresAtivos;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.x = pos;
-		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = pos;
+		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.y = 10;
 		mPartilhadaDadosJogo->nDefensoras[mPartilhadaDadosJogo->nJogadoresAtivos].Posicao.caracter = 'D';
-		mPartilhadaDadosJogo->Mapa[pos][pos].caracter = 'D';
+		mPartilhadaDadosJogo->Mapa[pos][10].caracter = 'D';
 	}
 
 	mPartilhadaDadosJogo->nJogadoresAtivos++;
@@ -182,8 +182,7 @@ void registaNave() {
 
 void teclaCima(int w) {
 	//TEM QUE SER RETIFICADO,
-	//PESQUISAR PELO PROCESSID DO CLIENTE E ALTERAR NAQUELE CLIENTE
-	_tprintf(CIMA);
+	//VERIFICAR SE NÂO ESTA NINGUEM NA POSIÇÃO
 	int x = mPartilhadaDadosJogo->nDefensoras[w].Posicao.x,
 		y = mPartilhadaDadosJogo->nDefensoras[w].Posicao.y;
 	mPartilhadaDadosJogo->Mapa[x][y].caracter = ' ';
@@ -192,15 +191,41 @@ void teclaCima(int w) {
 	//[->linha][coluna]
 	mPartilhadaDadosJogo->Mapa[x][y-1].caracter = 'D';
 }
-void teclaBaixo() {
+void teclaBaixo(int w) {
 	_tprintf(BAIXO);
+	int x = mPartilhadaDadosJogo->nDefensoras[w].Posicao.x,
+		y = mPartilhadaDadosJogo->nDefensoras[w].Posicao.y;
+	mPartilhadaDadosJogo->Mapa[x][y].caracter = ' ';
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.x = x;
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.y = y + 1;
+	//[->linha][coluna]
+	mPartilhadaDadosJogo->Mapa[x][y+1].caracter = 'D';
 }
-void teclaEsquerda() {
+
+void teclaEsquerda(int w) {
 	_tprintf(ESQUERDA);
+	
+	int x = mPartilhadaDadosJogo->nDefensoras[w].Posicao.x,
+		y = mPartilhadaDadosJogo->nDefensoras[w].Posicao.y;
+	mPartilhadaDadosJogo->Mapa[x][y].caracter = ' ';
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.x = x-1;
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.y = y;
+	//[->linha][coluna]
+	mPartilhadaDadosJogo->Mapa[x-1][y].caracter = 'D';
 }
-void teclaDireita() {
+
+void teclaDireita(int w) {
 	_tprintf(DIREITA);
+	
+	int x = mPartilhadaDadosJogo->nDefensoras[w].Posicao.x,
+		y = mPartilhadaDadosJogo->nDefensoras[w].Posicao.y;
+	mPartilhadaDadosJogo->Mapa[x][y].caracter = ' ';
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.x = x+1;
+	mPartilhadaDadosJogo->nDefensoras[w].Posicao.y = y;
+	//[->linha][coluna]
+	mPartilhadaDadosJogo->Mapa[x+1][y].caracter = 'D';
 }
+
 
 DWORD WINAPI leMsg() {
 	int pos, w;
@@ -231,15 +256,15 @@ DWORD WINAPI leMsg() {
 				}
 				else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], BAIXO)) == 0) {
 					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-					teclaBaixo();
+					teclaBaixo(pos);
 				}
 				else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], ESQUERDA)) == 0) {
 					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-					teclaEsquerda();
+					teclaEsquerda(pos);
 				}
 				else if ((_tcscmp(mPartilhadaZonaMsg->buf[pos], DIREITA)) == 0) {
 					_tprintf(TEXT("%s: '%s'\n"), mPartilhadaZonaMsg->nave.nome, mPartilhadaZonaMsg->buf[pos]);
-					teclaDireita();
+					teclaDireita(pos);
 				}
 			}
 
