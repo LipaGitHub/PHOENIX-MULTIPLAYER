@@ -10,7 +10,7 @@
 #include "HeaderGateway.h"
 
 
-#define PIPE_NAME TEXT("\\\\.\\pipe\\gateway")
+
 #define N 10
 #define TAM 250
 BOOL fConnected = false;
@@ -88,6 +88,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	//Comunicação entre o cliente e o gateway (NamedPipes)
 	HANDLE comunicacaoCliGW = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeCliente, NULL, 0, NULL);
+
+	HANDLE threadLerMemoria = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)lerMemoria, NULL, 0, NULL);
 
 	while (!mPartilhadaZonaDadosJogo->jogoIniciado) {
 		/*_tprintf(TEXT("."));

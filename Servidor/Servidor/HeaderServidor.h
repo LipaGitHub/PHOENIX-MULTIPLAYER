@@ -4,7 +4,7 @@ DadosJogo *mPartilhadaDadosJogo;
 ZonaMsg *mPartilhadaZonaMsg;
 Celula *Tiros;
 
-HANDLE PodeEscrever, PodeLer, hMutex, hMutexMP, EventoMutex;
+HANDLE PodeEscrever, PodeLer, hMutex, hMutexMP, hMutexLer,Evento;
 TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("Semáforo Pode Ler");
 
 DWORD *threadId;
@@ -82,7 +82,8 @@ int IniciarMemoriaMutexSemaforo() {
 	hMutexMP = CreateMutex(NULL, FALSE, TEXT("Mutex MP"));
 	PodeEscrever = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeEscrever);
 	PodeLer = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeLer);
-	EventoMutex = CreateEvent(NULL, TRUE, FALSE, NULL);
+	hMutexLer = CreateMutex(NULL, FALSE, TEXT("Mutex Ler"));
+	Evento = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	t.QuadPart = sizeof(DadosJogo);
 	d.QuadPart = sizeof(ZonaMsg);
@@ -179,6 +180,7 @@ void registaNave() {
 	mPartilhadaDadosJogo->nJogadoresAtivos++;
 
 	ReleaseMutex(hMutex);
+	ReleaseSemaphore(PodeLer, 1, NULL);
 }
 
 void teclaCima(int w) {
@@ -275,6 +277,7 @@ DWORD WINAPI leMsg() {
 		}
 		ReleaseSemaphore(PodeEscrever, 1, NULL);
 		//Dispulta evento de atualização
+		
 	}
 
 }

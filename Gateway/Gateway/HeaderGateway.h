@@ -1,10 +1,11 @@
 #pragma once
 #include "..\..\DLL\DLL\Estruturas.h"
-
+#define PIPE_NAME TEXT("\\\\.\\pipe\\gateway")
+#define PIPE_NAMEWRITE TEXT("\\\\.\\pipe\\gatewayEscrita")
 ZonaMsg *mPartilhadaZonaMsg;
 DadosJogo *mPartilhadaZonaDadosJogo;
 
-HANDLE PodeEscrever, PodeLer, hMutex, PodeAtenderCliente;
+HANDLE PodeEscrever, PodeLer, hMutex, PodeAtenderCliente, hMutexLer, Evento;
 TCHAR NomeMemoria[] = TEXT("Memoria Partilhada MSG");
 TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("Semáforo Pode Ler");
 TCHAR NomeSemaforoPodeAtenderCliente[] = TEXT("Semáforo Pode Atender Cliente");
@@ -12,7 +13,7 @@ TCHAR NomeSemaforoPodeAtenderCliente[] = TEXT("Semáforo Pode Atender Cliente");
 char init = 1;
 TCHAR cmd[BufferSize];
 void WINAPI RecebeTeclaCliente(HANDLE hPipe);
-
+DWORD WINAPI ThreadVerificaMemoria(LPVOID param);
 
 void readTChars(TCHAR * p, int maxchars) {
 	int len;
@@ -20,6 +21,17 @@ void readTChars(TCHAR * p, int maxchars) {
 	len = _tcslen(p);
 	if (p[len - 1] == TEXT('\n'))
 		p[len - 1] = TEXT('\0');
+}
+
+DWORD WINAPI lerMemoria() {
+	HANDLE hPipe;
+	hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0 | FILE_FLAG_OVERLAPPED, NULL);
+	if (hPipe == INVALID_HANDLE_VALUE) {
+		_tprintf(TEXT("[ERRO] Ainda não foi lançado o gateway!\n"));
+		Sleep(1000);
+	}
+	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadVerificaMemoria, hPipe, 0, NULL);
+	return 1;
 }
 
 void WINAPI PossivelJogar(HANDLE hPipe) {
@@ -57,6 +69,8 @@ int IniciarMemoriaMutexSemaforo() {
 	PodeEscrever = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeEscrever);
 	PodeLer = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeLer);
 	PodeAtenderCliente = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeAtenderCliente);
+	hMutexLer = CreateMutex(NULL, FALSE, TEXT("Mutex Ler"));
+	Evento = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	d.QuadPart = sizeof(ZonaMsg);
 	t.QuadPart = sizeof(DadosJogo);
@@ -147,7 +161,26 @@ DWORD WINAPI ThreadAtendeCliente(LPVOID param) {
 
 	return 0;
 }
+DWORD WINAPI ThreadVerificaMemoria(LPVOID param) {
+	HANDLE hPipeEscrita = (HANDLE)param;
+	DWORD cbToWrite = sizeof(mPartilhadaZonaMsg);
+	WaitForSingleObject(PodeLer, INFINITE);
+	WaitForSingleObject(hMutex, INFINITE);
+	_tprintf(TEXT("\nPassei pelo Evento"));
+	for (int i = 0; i < nJogadores; i++) {
+		mPartilhadaZonaMsg->dadosCliente.nDefensoras[i] = mPartilhadaZonaDadosJogo->nDefensoras[i];
+		mPartilhadaZonaMsg->dadosCliente.nInimigas[i] = mPartilhadaZonaDadosJogo->nInimigas[i];
+		mPartilhadaZonaMsg->dadosCliente.nPowerups[i] = mPartilhadaZonaDadosJogo->nPowerups[i];
+	}
 
+	if (!WriteFile(hPipeEscrita, &mPartilhadaZonaMsg, cbToWrite, &cbToWrite, NULL)) {
+		_tprintf(TEXT("[ERRO] Escrever no pipe Escrita... (WriteFile)\n"));
+		exit(-1);
+	}
+
+	ReleaseMutex(hMutex);
+	ReleaseSemaphore(PodeEscrever,1,NULL);
+}
 DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 	TCHAR buf[256];
 	DWORD n;

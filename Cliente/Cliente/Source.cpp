@@ -8,7 +8,50 @@
 #include "..\..\DLL\DLL\Estruturas.h"
 
 #define PIPE_NAME TEXT("\\\\.\\pipe\\gateway")
+#define PIPE_NAMEWRITE TEXT("\\\\.\\pipe\\gatewayEscrita")
 HANDLE PodeAtenderCliente;
+ZonaMsg zMsg;
+DWORD cbToWrite;
+BOOL fConnected = false;
+HANDLE hThreadRececao;
+DWORD dwThreadId = 0;
+
+void WINAPI atualizaDados(HANDLE hPipe) {
+	ZonaMsg zMsgRec;
+	DWORD n = sizeof(ZonaMsg);
+	BOOL ret = ReadFile(hPipe, &zMsgRec, n, &n, NULL);
+	if (!ret || !n) {
+		_tprintf(TEXT("Ocorreu algum erro ao receber dados do Gateway!\n"));
+		exit(-1);
+	}
+	_tprintf(TEXT("Li do pipe do Gateway, [NOME]%s"),zMsgRec.nave.nome);
+	
+}
+DWORD WINAPI ThreadAtendeGateway(LPVOID param) {
+	HANDLE hPipe = (HANDLE)param;
+	HANDLE threadDados = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)atualizaDados, hPipe, 0, NULL);
+	WaitForSingleObject(threadDados, INFINITE);
+	return 0;
+}
+
+DWORD WINAPI RecebeGateway() {
+	HANDLE hPipe;
+	hPipe = CreateNamedPipe(PIPE_NAMEWRITE, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, PIPE_UNLIMITED_INSTANCES,
+		sizeof(ZonaMsg), sizeof(ZonaMsg), 0, NULL);
+	if (hPipe == INVALID_HANDLE_VALUE) {
+		_tprintf(TEXT("[ERRO] Criar Named Pipe!"));
+		exit(-1);
+	}
+	_tprintf(TEXT("[GATEWAY] Handle do pipe Receção Gateway criado\n"));
+
+	fConnected = ConnectNamedPipe(hPipe, NULL);
+	if (fConnected) {
+		hThreadRececao = CreateThread(NULL, 0, ThreadAtendeGateway, (LPVOID)hPipe, 0, &dwThreadId);
+	}
+	WaitForSingleObject(hThreadRececao, INFINITE);
+	return 1;
+}
+
 
 
 void WINAPI VerificaJogo(HANDLE hPipe) {
@@ -43,7 +86,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hPipe;
 	DWORD n;
 	TCHAR buf[256];
-	CHAR *buff;
+	ZonaMsg cMsg;
+	//CHAR *buff;
 	TCHAR clienteMsg[] = TEXT("%d", GetCurrentProcessId());
 	int op;
 
@@ -56,6 +100,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 		}
 	} while (hPipe == INVALID_HANDLE_VALUE);
 
+	
+
 	_tprintf(TEXT("Ligação estabelecida com sucesso!\n"));
 
 	HANDLE VerificaJogoIniciado = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)VerificaJogo, hPipe, 0, NULL);
@@ -63,12 +109,13 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	_tprintf(TEXT("Introduza um username: "));
 	_fgetts(buf, 256, stdin);
-
+	wcscpy_s(cMsg.cmd, buf);
 	if (!WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL)) {
 		_tprintf(TEXT("[ERRO] Escrever no pipe... (WriteFile)\n"));
 		exit(-1);
 	}
 	_tprintf(TEXT("[Cliente] Enviei %d bytes ao gateway\n\n"), n);
+	HANDLE verificaAtualizacao = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeGateway, NULL, 0, NULL);
 
 	while (1)
 	{
@@ -87,8 +134,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 			case 3: wcscpy_s(buf, ESQUERDA); break;
 			case 4: wcscpy_s(buf, DIREITA); break;
 			}
-
-			if (!WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL)) {
+			cbToWrite = sizeof(zMsg);
+			if (!WriteFile(hPipe, buf, sizeof(buf), &n, NULL)) {
 				_tprintf(TEXT("[ERRO] Escrever no pipe... (WriteFile)\n"));
 				exit(-1);
 			}

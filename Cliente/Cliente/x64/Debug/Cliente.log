@@ -1,6 +1,4 @@
 ﻿  Source.cpp
-c:\users\lipap\desktop\phoenix-multiplayer\cliente\cliente\source.cpp(47): warning C4002: too many actual parameters for macro 'TEXT'
-c:\users\lipap\desktop\phoenix-multiplayer\cliente\cliente\source.cpp(67): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
-c:\users\lipap\desktop\phoenix-multiplayer\cliente\cliente\source.cpp(91): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
-c:\users\lipap\desktop\phoenix-multiplayer\cliente\cliente\source.cpp(46): warning C4101: 'buff': unreferenced local variable
+c:\users\lipap\desktop\phoenix-multiplayer\cliente\cliente\source.cpp(91): warning C4002: too many actual parameters for macro 'TEXT'
+c:\users\lipap\desktop\phoenix-multiplayer\cliente\cliente\source.cpp(113): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
   Cliente.vcxproj -> C:\Users\lipap\Desktop\PHOENIX-MULTIPLAYER\Cliente\x64\Debug\Cliente.exe
