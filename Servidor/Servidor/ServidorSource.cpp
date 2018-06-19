@@ -40,6 +40,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	//3.Início do jogo
 	int op;
 	do {
+		
 		_tprintf(TEXT("\n\nDeseja iniciar jogo?\n"));
 		_tprintf(TEXT("\n1- Sim\n"));
 		_tprintf(TEXT("2- Não\n"));

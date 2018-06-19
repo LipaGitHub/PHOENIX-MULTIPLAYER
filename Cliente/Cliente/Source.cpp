@@ -70,6 +70,7 @@ void WINAPI VerificaJogo(HANDLE hPipe) {
 			}
 			else if ((_tcscmp(buf, POSSIVELJOGAR)) == 0) {
 				_tprintf(TEXT("A preparar jogo...\n"));
+				HANDLE verificaAtualizacao = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeGateway, NULL, 0, NULL);
 				Sleep(3000);
 				break;
 			}
@@ -103,19 +104,19 @@ int _tmain(int argc, LPTSTR argv[]) {
 	
 
 	_tprintf(TEXT("Ligação estabelecida com sucesso!\n"));
-
+	
 	HANDLE VerificaJogoIniciado = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)VerificaJogo, hPipe, 0, NULL);
 	WaitForSingleObject(VerificaJogoIniciado, INFINITE);
-
+	
 	_tprintf(TEXT("Introduza um username: "));
 	_fgetts(buf, 256, stdin);
-	wcscpy_s(cMsg.cmd, buf);
+
 	if (!WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL)) {
 		_tprintf(TEXT("[ERRO] Escrever no pipe... (WriteFile)\n"));
 		exit(-1);
 	}
 	_tprintf(TEXT("[Cliente] Enviei %d bytes ao gateway\n\n"), n);
-	HANDLE verificaAtualizacao = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeGateway, NULL, 0, NULL);
+	
 
 	while (1)
 	{
@@ -134,8 +135,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 			case 3: wcscpy_s(buf, ESQUERDA); break;
 			case 4: wcscpy_s(buf, DIREITA); break;
 			}
-			cbToWrite = sizeof(zMsg);
-			if (!WriteFile(hPipe, buf, sizeof(buf), &n, NULL)) {
+		
+			if (!WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL)) {
 				_tprintf(TEXT("[ERRO] Escrever no pipe... (WriteFile)\n"));
 				exit(-1);
 			}

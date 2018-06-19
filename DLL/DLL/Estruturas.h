@@ -79,7 +79,6 @@ typedef struct {
 typedef struct {
 	bool mexer;
 	NaveDefensora nave;
-	TCHAR cmd[256];
 	TCHAR buf[Buffers][BufferSize];
 	int in, out;
 	MsgCliente dadosCliente;

@@ -1,0 +1,12 @@
+﻿  stdafx.cpp
+  ClienteGrafico.cpp
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.h(7): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.h(7): error C2146: syntax error: missing ';' before identifier 'zMsg'
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.h(28): error C2065: 'zMsg': undeclared identifier
+c:\users\lipap\desktop\phoenix-multiplayer\dll\dll\estruturas.h(85): error C2378: 'ZonaMsg': redefinition; symbol cannot be overloaded with a typedef
+  c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.h(7): note: see declaration of 'ZonaMsg'
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.cpp(168): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.cpp(176): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.cpp(184): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.cpp(192): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
+c:\users\lipap\desktop\phoenix-multiplayer\clientegrafico\clientegrafico\clientegrafico.cpp(258): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data

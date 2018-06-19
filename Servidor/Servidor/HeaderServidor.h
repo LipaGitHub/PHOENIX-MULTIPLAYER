@@ -178,9 +178,10 @@ void registaNave() {
 	}
 
 	mPartilhadaDadosJogo->nJogadoresAtivos++;
-
+	
 	ReleaseMutex(hMutex);
 	ReleaseSemaphore(PodeLer, 1, NULL);
+	
 }
 
 void teclaCima(int w) {

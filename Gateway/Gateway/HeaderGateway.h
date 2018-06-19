@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "..\..\DLL\DLL\Estruturas.h"
 #define PIPE_NAME TEXT("\\\\.\\pipe\\gateway")
 #define PIPE_NAMEWRITE TEXT("\\\\.\\pipe\\gatewayEscrita")
@@ -7,8 +7,8 @@ DadosJogo *mPartilhadaZonaDadosJogo;
 
 HANDLE PodeEscrever, PodeLer, hMutex, PodeAtenderCliente, hMutexLer, Evento;
 TCHAR NomeMemoria[] = TEXT("Memoria Partilhada MSG");
-TCHAR NomeSemaforoPodeEscrever[] = TEXT("Semáforo Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("Semáforo Pode Ler");
-TCHAR NomeSemaforoPodeAtenderCliente[] = TEXT("Semáforo Pode Atender Cliente");
+TCHAR NomeSemaforoPodeEscrever[] = TEXT("SemÃ¡foro Pode Escrever"), NomeSemaforoPodeLer[] = TEXT("SemÃ¡foro Pode Ler");
+TCHAR NomeSemaforoPodeAtenderCliente[] = TEXT("SemÃ¡foro Pode Atender Cliente");
 
 char init = 1;
 TCHAR cmd[BufferSize];
@@ -27,7 +27,7 @@ DWORD WINAPI lerMemoria() {
 	HANDLE hPipe;
 	hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0 | FILE_FLAG_OVERLAPPED, NULL);
 	if (hPipe == INVALID_HANDLE_VALUE) {
-		_tprintf(TEXT("[ERRO] Ainda não foi lançado o gateway!\n"));
+		_tprintf(TEXT("[ERRO] LER MEMORIA!\n"));
 		Sleep(1000);
 	}
 	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadVerificaMemoria, hPipe, 0, NULL);
@@ -44,12 +44,14 @@ void WINAPI PossivelJogar(HANDLE hPipe) {
 		WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
 		}
 		else*/
+
 		if (mPartilhadaZonaDadosJogo->nJogadoresAtivos >= mPartilhadaZonaDadosJogo->nMaxJogadores) {
 			wcscpy_s(buf, MAXJOGADORESEXCEDIDO);
 			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
 		}
 		else {
 			wcscpy_s(buf, POSSIVELJOGAR);
+			HANDLE threadLerMemoria = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)lerMemoria, NULL, 0, NULL);
 			WriteFile(hPipe, buf, _tcslen(buf) * sizeof(TCHAR), &n, NULL);
 			break;
 		}
@@ -77,7 +79,7 @@ int IniciarMemoriaMutexSemaforo() {
 	hZonaMsg = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d.HighPart, d.LowPart, NomeMemoria);
 	hDadosJogo = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READONLY, t.HighPart, t.LowPart, TEXT("Memoria Partilhada Dado Jogo"));
 	if (PodeEscrever == NULL || PodeLer == NULL) {
-		_tprintf(TEXT("[Erro]Criação de objectos do Windows(%d)\n"), GetLastError());
+		_tprintf(TEXT("[Erro]CriaÃ§Ã£o de objectos do Windows(%d)\n"), GetLastError());
 		return -1;
 	}
 
@@ -85,7 +87,7 @@ int IniciarMemoriaMutexSemaforo() {
 	mPartilhadaZonaDadosJogo = (DadosJogo*)MapViewOfFile(hDadosJogo, FILE_MAP_READ, 0, 0, (SIZE_T)t.QuadPart);
 
 	if (mPartilhadaZonaMsg == NULL) {
-		_tprintf(TEXT("[Erro]Mapeamento da memória partilhada(%d)\n"), GetLastError());
+		_tprintf(TEXT("[Erro]Mapeamento da memÃ³ria partilhada(%d)\n"), GetLastError());
 		return -1;
 	}
 
@@ -109,26 +111,25 @@ void WINAPI GuardarJogador(HANDLE hPipe) {
 		if (!ret || !n) {
 			_tprintf(TEXT("Ocorreu algum erro ao receber o username do jogador!\n"), n, buf);
 		}
-		
-		//Jogo ainda não foi lançado pelo Servidor
+
+		//Jogo ainda nÃ£o foi lanÃ§ado pelo Servidor
 		WaitForSingleObject(PodeEscrever, INFINITE);
 		//Esperar pelo mutex
 		WaitForSingleObject(hMutex, INFINITE);
 		// Copiar o valor de in para pos = i % Buffers;
 
-		/**/
-
 		pos = mPartilhadaZonaDadosJogo->nJogadoresAtivos;
 		//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
 		mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
 		mPartilhadaZonaMsg->mexer = false;
-		//Recebe o nome através de NamedPipe do Cliente
-		
+		//Recebe o nome atravÃ©s de NamedPipe do Cliente
+
 
 		wcscpy_s(mPartilhadaZonaMsg->nave.nome, buf);
 		mPartilhadaZonaMsg->nave.tHandle = hPipe;
 		_stprintf_s(mPartilhadaZonaMsg->buf[pos], BufferSize, ADICIONARCLIENTE);
 		//_tprintf(TEXT("[GW] Recebi %d bytes do cliente '%s'... (ReadFile)\n"), n, buf);
+
 
 		// libertar o mutex
 		ReleaseMutex(hMutex);
@@ -155,8 +156,10 @@ DWORD WINAPI ThreadAtendeCliente(LPVOID param) {
 	HANDLE hPipe = (HANDLE)param;
 	HANDLE possivelJogar = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PossivelJogar, hPipe, 0, NULL);
 	WaitForSingleObject(possivelJogar, INFINITE);
+	
 	HANDLE GuardarJogadorBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)GuardarJogador, hPipe, 0, NULL);
 	WaitForSingleObject(GuardarJogadorBuffer, INFINITE);
+	
 	HANDLE TrataPedidosCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)RecebeTeclaCliente, hPipe, 0, NULL);
 
 	return 0;
@@ -172,14 +175,15 @@ DWORD WINAPI ThreadVerificaMemoria(LPVOID param) {
 		mPartilhadaZonaMsg->dadosCliente.nInimigas[i] = mPartilhadaZonaDadosJogo->nInimigas[i];
 		mPartilhadaZonaMsg->dadosCliente.nPowerups[i] = mPartilhadaZonaDadosJogo->nPowerups[i];
 	}
-
+	
 	if (!WriteFile(hPipeEscrita, &mPartilhadaZonaMsg, cbToWrite, &cbToWrite, NULL)) {
 		_tprintf(TEXT("[ERRO] Escrever no pipe Escrita... (WriteFile)\n"));
 		exit(-1);
 	}
-
+	
 	ReleaseMutex(hMutex);
-	ReleaseSemaphore(PodeEscrever,1,NULL);
+	ReleaseSemaphore(PodeEscrever, 1, NULL);
+	return 0;
 }
 DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 	TCHAR buf[256];
@@ -188,14 +192,15 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 	int pos;
 	while (1) {
 		if (!mPartilhadaZonaDadosJogo->jogoIniciado) {
+			//Jogo ainda nao foi lanÃ§ado pelo Servidor
 
 			BOOL ret = ReadFile(hPipe, buf, sizeof(buf), &n, NULL);
 			buf[n / sizeof(TCHAR)] = '\0';
 			if (!ret || !n)
 				break;
-			
+
 			WaitForSingleObject(PodeEscrever, INFINITE);
-			
+
 			WaitForSingleObject(hMutex, INFINITE);
 
 			/**/
@@ -209,14 +214,14 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 				}
 			}
 			//pos = mPartilhadaZonaDadosJogo->nJogadoresAtivos;
-			
+
 			//atualizar valor de in( na memoria partilhada->mPartilhadaZonaMsg)
 			mPartilhadaZonaMsg->in = (pos + 1) % Buffers;
 
 			/*_tprintf(TEXT("CMD>"));
 			readTChars(cmd, BufferSize);*/
-			
-			
+
+
 			mPartilhadaZonaMsg->mexer = true;
 			_tprintf(TEXT("[%s] Recebi %d bytes: '%s'... (ReadFile)\n"), nome, n, buf);
 			wcscpy_s(mPartilhadaZonaMsg->buf[pos], buf);
@@ -230,7 +235,7 @@ DWORD WINAPI EscreverMsg(HANDLE hPipe) {
 		}
 		else {
 			//Iniciado o jogo
-			_tprintf(TEXT("Jogo Não Iniciado"));
+			_tprintf(TEXT("Jogo NÃ£o Iniciado"));
 			//_tprintf(LIMITEADICIONARCLIENTE);
 		}
 	}
@@ -242,7 +247,7 @@ void WINAPI RecebeTeclaCliente(HANDLE hPipe) {
 	TCHAR buf[256];
 	DWORD n;
 	TCHAR *nome;
-	
+
 
 	HANDLE EscreverMsgBuffer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)EscreverMsg, hPipe, 0, NULL);
 	WaitForSingleObject(EscreverMsgBuffer, INFINITE);

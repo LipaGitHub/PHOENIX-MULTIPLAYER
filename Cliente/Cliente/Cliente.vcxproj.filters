@@ -19,7 +19,4 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\Gateway\Debug\DLL.lib" />
-  </ItemGroup>
 </Project>
